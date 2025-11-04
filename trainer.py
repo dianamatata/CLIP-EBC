@@ -91,6 +91,17 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
     setup(local_rank, nprocs)
     print(f"Initialized successfully. Training with {nprocs} GPUs.")
     device = f"cuda:{local_rank}" if local_rank != -1 else "cuda:0"
+    if torch.cuda.is_available():
+        print("CUDA is available. Running on GPU.")
+        backends = "gpu"
+    elif torch.backends.mps.is_available():
+        print("CUDA is not available. Running on MPS.")
+        backends = "mps"
+    else:
+        print("CUDA and MPS are not available. Running on CPU.")
+        backends = "cpu"
+
+    device = torch.device(backends)
     print(f"Using device: {device}.")
 
     ddp = nprocs > 1
@@ -234,7 +245,15 @@ def main():
         args.zero_pad_to_multiple = False
         args.resize_to_multiple = False
 
-    args.nprocs = torch.cuda.device_count()
+    if torch.backends.mps.is_available():
+        device_count = 1
+    elif torch.cuda.is_available():
+        device_count = torch.cuda.device_count()
+    else:
+        device_count = 0
+
+    args.nprocs = device_count
+
     print(f"Using {args.nprocs} GPUs.")
     if args.nprocs > 1:
         mp.spawn(run, nprocs=args.nprocs, args=(args.nprocs, args))
