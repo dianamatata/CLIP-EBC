@@ -5,7 +5,7 @@ from typing import Optional, List, Tuple
 
 
 def get_id(x: str) -> int:
-    return int(x.split(".")[0])
+    return x.split(".")[0]
 
 
 def generate_density_map(label: Tensor, height: int, width: int, sigma: Optional[float] = None) -> Tensor:
