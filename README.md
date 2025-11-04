@@ -134,6 +134,8 @@ export CUDA_VISIBLE_DEVICES=0  # Set the GPU ID. Comment this line to use all av
 # 2. You can use the `--amp` argument to enable automatic mixed precision training to speed up the training process. Could be useful for UCF-QNRF and NWPU.
 # 3. Valid values for `--dataset` are `nwpu`, `sha`, `shb`, and `qnrf`.
 # See the `trainer.py` for more details.
+# train popcorn
+python trainer.py --model clip_resnet50 --input_size 448 --reduction 8 --truncation 4 --anchor_points average --prompt_type word --dataset popcorn --count_loss dmcount
 
 # Train the CLIP-EBC (ResNet50) model on ShanghaiTech A. Use `--dataset shb` if you want to train on ShanghaiTech B.
 python trainer.py \
