@@ -51,6 +51,30 @@ conda create -n clip_ebc python=3.12.4  # Create a new conda environment. You ma
 conda activate clip_ebc  # Activate the environment.
 pip install -r requirements.txt  # Install the required packages.
 ```
+in terminal:
+
+```bash
+__conda_setup="$('/opt/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+eval "$__conda_setup"
+unset __conda_setup
+
+# Force Conda bin first
+export PATH="/opt/anaconda3/envs/clip_ebc/bin:$PATH"
+
+conda activate clip_ebc
+which python3
+```
+to delete it
+
+```bash
+conda deactivate
+conda env remove -n clip_ebc
+conda env list
+
+# check pyenv
+pyenv versions
+
+```
 
 #### 1.1 Downloading the datasets
 
@@ -111,16 +135,16 @@ export CUDA_VISIBLE_DEVICES=0  # Set the GPU ID. Comment this line to use all av
 # 3. Valid values for `--dataset` are `nwpu`, `sha`, `shb`, and `qnrf`.
 # See the `trainer.py` for more details.
 
-# Train the commonly used VGG19-based encoder-decoder model on NWPU-Crowd.
-python trainer.py \
-    --model vgg19_ae --input_size 448 --reduction 8 --truncation 4 --anchor_points average \
-    --dataset nwpu \
-    --count_loss dmcount &&
-
 # Train the CLIP-EBC (ResNet50) model on ShanghaiTech A. Use `--dataset shb` if you want to train on ShanghaiTech B.
 python trainer.py \
     --model clip_resnet50 --input_size 448 --reduction 8 --truncation 4 --anchor_points average --prompt_type word \
     --dataset sha \
+    --count_loss dmcount &&
+    
+# Train the commonly used VGG19-based encoder-decoder model on NWPU-Crowd.
+python trainer.py \
+    --model vgg19_ae --input_size 448 --reduction 8 --truncation 4 --anchor_points average \
+    --dataset nwpu \
     --count_loss dmcount &&
 
 # Train the CLIP-EBC (ViT-B/16) model on UCF-QNRF, using VPT in training and sliding window prediction in testing.
