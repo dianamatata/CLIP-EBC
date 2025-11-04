@@ -21,6 +21,14 @@ available_datasets = [
     "jhu", "jhu_crowd", "jhu_crowd_v2"
 ]
 
+def load_points_from_txt(txt_path):
+    points = []
+    with open(txt_path, 'r') as f:
+        for line in f:
+            if line.strip():
+                x, y = map(float, line.strip().split())
+                points.append([x, y])
+    return np.array(points, dtype=np.float32)
 
 def standardize_dataset_name(dataset: str) -> str:
     assert dataset.lower() in available_datasets, f"Dataset {dataset} is not available."
@@ -100,6 +108,10 @@ class Crowd(Dataset):
         label_names = glob(dir)
         image_names = [os.path.basename(image_name) for image_name in image_names]
         label_names = [os.path.basename(label_name) for label_name in label_names]
+        # print("image names: ", image_names)
+        # print("image dir: ", image_dir)
+        # print("label_names: ", label_names)
+
         image_names.sort(key=get_id)
         label_names.sort(key=get_id)
         image_ids = tuple([get_id(image_name) for image_name in image_names])
@@ -161,8 +173,11 @@ class Crowd(Dataset):
                 image = Image.open(f).convert("RGB")
             image = self.to_tensor(image)
 
-        with open(label_path, "rb") as f:
-            label = np.load(f)
+        if label_path.endswith(".txt"):
+            label = load_points_from_txt(label_path)
+        else:
+            with open(label_path, "rb") as f:
+                label = np.load(f)
 
         label = torch.from_numpy(label).float()
 
