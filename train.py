@@ -1,3 +1,5 @@
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+
 import torch
 from torch import nn
 from torch.optim import Optimizer
