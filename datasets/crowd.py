@@ -130,8 +130,6 @@ class Crowd(Dataset):
             if self.split == "train":
                 assert len(self.image_names) == len(self.label_names) == 3, f"popcorn train split should have 3 images, but found {len(self.image_names)}."
             else:
-                print(len(self.image_names))
-                print(len(self.label_names))
                 assert len(self.image_names) == len(self.label_names) == 2, f"popcorn val split should have 2 images, but found {len(self.image_names)}."
         elif self.dataset == "shb":
             if self.split == "train":
