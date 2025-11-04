@@ -6,6 +6,7 @@ from torch.cuda.amp import GradScaler
 
 from argparse import ArgumentParser
 import os, json
+import time
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -74,7 +75,7 @@ parser.add_argument("--T_mult", type=int, default=2, help="A factor increases T_
 parser.add_argument("--eta_min", type=float, default=1e-7, help="Minimum learning rate.")
 
 # Parameters for training
-parser.add_argument("--total_epochs", type=int, default=2600, help="Number of epochs to train.")
+parser.add_argument("--total_epochs", type=int, default=140, help="Number of TOTAL epochs to train. getting start_epoch from checkpoints")  # TODO adjust
 parser.add_argument("--eval_start", type=int, default=50, help="Start to evaluate after this number of epochs.")
 parser.add_argument("--eval_freq", type=int, default=1, help="Evaluate every this number of epochs.")
 parser.add_argument("--save_freq", type=int, default=5, help="Save checkpoint every this number of epochs. Could help reduce I/O.")
@@ -82,6 +83,7 @@ parser.add_argument("--save_best_k", type=int, default=3, help="Save the best k 
 parser.add_argument("--amp", action="store_true", help="Use automatic mixed precision training.")
 parser.add_argument("--num_workers", type=int, default=4, help="Number of workers for data loading.")
 parser.add_argument("--local_rank", type=int, default=-1, help="Local rank for distributed training.")
+parser.add_argument("--data_augmentation", type=bool, default=True, help="augmentation pipeline.")
 parser.add_argument("--seed", type=int, default=42, help="Random seed.")
 
 
@@ -106,13 +108,20 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
 
     ddp = nprocs > 1
 
+    # Disable AMP automatically if not on CUDA
+    if device.type != "cuda":
+        print(f"AMP is only supported on CUDA. Disabling AMP for device: {device}.")
+        args.amp = False
+
     if args.regression:
         bins, anchor_points = None, None
     else:
         with open(os.path.join(current_dir, "configs", f"reduction_{args.reduction}.json"), "r") as f:
             config = json.load(f)[str(args.truncation)][args.dataset]
         bins = config["bins"][args.granularity]
-        anchor_points = config["anchor_points"][args.granularity]["average"] if args.anchor_points == "average" else config["anchor_points"][args.granularity]["middle"]
+        anchor_points = (
+            config["anchor_points"][args.granularity]["average"] if args.anchor_points == "average" else config["anchor_points"][args.granularity]["middle"]
+        )
         bins = [(float(b[0]), float(b[1])) for b in bins]
         anchor_points = [float(p) for p in anchor_points]
 
@@ -121,14 +130,14 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
 
     model = get_model(
         backbone=args.model,
-        input_size=args.input_size, 
+        input_size=args.input_size,
         reduction=args.reduction,
         bins=bins,
         anchor_points=anchor_points,
         prompt_type=args.prompt_type,
         num_vpt=args.num_vpt,
         vpt_drop=args.vpt_drop,
-        deep_vpt=not args.shallow_vpt
+        deep_vpt=not args.shallow_vpt,
     ).to(device)
 
     grad_scaler = GradScaler() if args.amp else None
@@ -142,7 +151,10 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
 
     args.ckpt_dir = os.path.join(current_dir, "checkpoints", args.dataset, ckpt_dir_name)
     os.makedirs(args.ckpt_dir, exist_ok=True)
-    model, optimizer, scheduler, grad_scaler, start_epoch, loss_info, hist_val_scores, best_val_scores = load_checkpoint(args, model, optimizer, scheduler, grad_scaler)
+    model, optimizer, scheduler, grad_scaler, start_epoch, loss_info, hist_val_scores, best_val_scores = load_checkpoint(
+        args, model, optimizer, scheduler, grad_scaler
+    )
+    print("start_epoch: ", start_epoch)
 
     if local_rank == 0:
         model_without_ddp = model
@@ -157,7 +169,13 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
 
     model = DDP(nn.SyncBatchNorm.convert_sync_batchnorm(model), device_ids=[local_rank], output_device=local_rank) if ddp else model
 
-    for epoch in range(start_epoch, args.total_epochs + 1):  # start from 1
+    start_time = time.time()
+    for epoch in range(start_epoch, args.total_epochs + 1):
+        elapsed_time = time.time() - start_time
+        start_time = time.time()
+        print(f"Elapsed Time: {elapsed_time} seconds")
+
+        print("epoch: ", epoch)  # start from 1
         if local_rank == 0:
             message = f"\tlr: {optimizer.param_groups[0]['lr']:.3e}"
             log(logger, epoch, args.total_epochs, message=message)
@@ -165,7 +183,9 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
         if sampler is not None:
             sampler.set_epoch(epoch)
 
-        model, optimizer, grad_scaler, loss_info = train(model, train_loader, loss_fn, optimizer, grad_scaler, device, local_rank, nprocs)
+        model, optimizer, grad_scaler, loss_info = train(
+            model, train_loader, loss_fn, optimizer, grad_scaler, device, local_rank, nprocs, args.data_augmentation
+        )
         scheduler.step()
         barrier(ddp)
 
@@ -186,10 +206,12 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
                     args.input_size,
                     args.stride,
                 )
-                hist_val_scores, best_val_scores = update_eval_result(epoch, curr_val_scores, hist_val_scores, best_val_scores, writer, state_dict, os.path.join(args.ckpt_dir))
+                hist_val_scores, best_val_scores = update_eval_result(
+                    epoch, curr_val_scores, hist_val_scores, best_val_scores, writer, state_dict, os.path.join(args.ckpt_dir)
+                )
                 log(logger, None, None, None, curr_val_scores, best_val_scores, message="\n" * 3)
-    
-            if (epoch % args.save_freq == 0):
+
+            if epoch % args.save_freq == 0:
                 save_checkpoint(
                     epoch + 1,
                     model.module.state_dict() if ddp else model.state_dict(),
@@ -230,7 +252,7 @@ def main():
         args.num_vpt = None
         args.vpt_drop = None
         args.shallow_vpt = None
-    
+
     if "clip" not in args.model:
         args.prompt_type = None
 

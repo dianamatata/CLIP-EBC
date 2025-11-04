@@ -28,12 +28,11 @@ vgg_cfgs = {
     "A": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512],
     "B": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512],
     "D": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512],
-    "E": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512]
+    "E": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512],
 }
 
 
 def _log_api_usage_once(obj: Any) -> None:
-
     """
     Logs API usage(module and name) within an organization.
     In a large ecosystem, it's often useful to track the PyTorch and
@@ -90,7 +89,6 @@ class ConvNormActivation(torch.nn.Sequential):
         bias: Optional[bool] = None,
         conv_layer: Callable[..., torch.nn.Module] = torch.nn.Conv2d,
     ) -> None:
-
         if padding is None:
             if isinstance(kernel_size, int) and isinstance(dilation, int):
                 padding = (kernel_size - 1) // 2 * dilation
@@ -126,9 +124,7 @@ class ConvNormActivation(torch.nn.Sequential):
         self.out_channels = out_channels
 
         if self.__class__ == ConvNormActivation:
-            warnings.warn(
-                "Don't use ConvNormActivation directly, please use Conv2dNormActivation and Conv3dNormActivation instead."
-            )
+            warnings.warn("Don't use ConvNormActivation directly, please use Conv2dNormActivation and Conv3dNormActivation instead.")
 
 
 class Conv2dNormActivation(ConvNormActivation):
@@ -164,7 +160,6 @@ class Conv2dNormActivation(ConvNormActivation):
         inplace: Optional[bool] = True,
         bias: Optional[bool] = None,
     ) -> None:
-
         super().__init__(
             in_channels,
             out_channels,
@@ -361,22 +356,22 @@ class Bottleneck(nn.Module):
         out = self.relu(out)
 
         return out
-    
+
 
 def _init_weights(model: nn.Module) -> None:
     for m in model.modules():
         if isinstance(m, nn.Conv2d):
             nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             if m.bias is not None:
-                nn.init.constant_(m.bias, 0.)
+                nn.init.constant_(m.bias, 0.0)
         elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
-            nn.init.constant_(m.weight, 1.)
+            nn.init.constant_(m.weight, 1.0)
             if m.bias is not None:
-                nn.init.constant_(m.bias, 0.)
+                nn.init.constant_(m.bias, 0.0)
         elif isinstance(m, nn.Linear):
             nn.init.normal_(m.weight, std=0.01)
             if m.bias is not None:
-                nn.init.constant_(m.bias, 0.)
+                nn.init.constant_(m.bias, 0.0)
 
 
 class Upsample(nn.Module):
@@ -431,12 +426,14 @@ def make_resnet_layers(
         if v == "U":
             layers.append(Upsample(scale_factor=2, mode="bilinear"))
         else:
-            layers.append(block(
-                in_channels=in_channels,
-                out_channels=v,
-                dilation=dilation,
-                expansion=expansion,
-            ))
+            layers.append(
+                block(
+                    in_channels=in_channels,
+                    out_channels=v,
+                    dilation=dilation,
+                    expansion=expansion,
+                )
+            )
             in_channels = v
 
     layers = nn.Sequential(*layers)

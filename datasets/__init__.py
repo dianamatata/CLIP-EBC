@@ -5,8 +5,20 @@ from .utils import collate_fn
 
 
 __all__ = [
-    "Crowd", "available_datasets", "standardize_dataset_name", "NWPUTest",
-    "RandomCrop", "Resize", "RandomResizedCrop", "RandomHorizontalFlip", "Resize2Multiple", "ZeroPad2Multiple",
-    "ColorJitter", "RandomGrayscale", "GaussianBlur", "RandomApply", "PepperSaltNoise",
+    "Crowd",
+    "available_datasets",
+    "standardize_dataset_name",
+    "NWPUTest",
+    "RandomCrop",
+    "Resize",
+    "RandomResizedCrop",
+    "RandomHorizontalFlip",
+    "Resize2Multiple",
+    "ZeroPad2Multiple",
+    "ColorJitter",
+    "RandomGrayscale",
+    "GaussianBlur",
+    "RandomApply",
+    "PepperSaltNoise",
     "collate_fn",
 ]

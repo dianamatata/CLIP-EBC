@@ -11,13 +11,7 @@ from warnings import warn
 from datasets import standardize_dataset_name
 
 
-def _calc_size(
-    img_w: int,
-    img_h: int,
-    min_size: int,
-    max_size: int,
-    base: int = 32
-) -> Union[Tuple[int, int], None]:
+def _calc_size(img_w: int, img_h: int, min_size: int, max_size: int, base: int = 32) -> Union[Tuple[int, int], None]:
     """
     This function generates a new size for an image while keeping the aspect ratio. The new size should be within the given range (min_size, max_size).
 
@@ -36,7 +30,7 @@ def _calc_size(
     aspect_ratios = (img_w / img_h, img_h / img_w)
     if min_size / max_size <= min(aspect_ratios) <= max(aspect_ratios) <= max_size / min_size:  # possible to resize and preserve the aspect ratio
         if min_size <= min(img_w, img_h) <= max(img_w, img_h) <= max_size:  # already within the range, no need to resize
-            ratio = 1.
+            ratio = 1.0
         elif min(img_w, img_h) < min_size:  # smaller than the minimum size, resize to the minimum size
             ratio = min_size / min(img_w, img_h)
         else:  # larger than the maximum size, resize to the maximum size
@@ -83,14 +77,7 @@ def _resize(image: np.ndarray, label: np.ndarray, min_size: int, max_size: int) 
         return image, label, True
 
 
-def _preprocess(
-    dataset: str,
-    data_src_dir: str,
-    data_dst_dir: str,
-    min_size: int,
-    max_size: int,
-    generate_npy: bool = False
-) -> None:
+def _preprocess(dataset: str, data_src_dir: str, data_dst_dir: str, min_size: int, max_size: int, generate_npy: bool = False) -> None:
     """
     This function organizes the data into the following structure:
     data_dst_dir
@@ -136,7 +123,7 @@ def _preprocess(
 
     elif dataset == "qnrf":
         _qnrf(data_src_dir, data_dst_dir, min_size, max_size, generate_npy)
-    
+
     else:  # dataset == "jhu"
         _jhu(data_src_dir, data_dst_dir, min_size, max_size, generate_npy)
 
@@ -185,13 +172,7 @@ def _resize_and_save(
         np.save(image_npy_dst_path, image_npy)
 
 
-def _shanghaitech(
-    data_src_dir: str,
-    data_dst_dir: str,
-    min_size: int,
-    max_size: int,
-    generate_npy: bool = False
-) -> None:
+def _shanghaitech(data_src_dir: str, data_dst_dir: str, min_size: int, max_size: int, generate_npy: bool = False) -> None:
     for split in ["train", "val"]:
         generate_npy = generate_npy and split == "train"
         print(f"Processing {split}...")
@@ -200,13 +181,17 @@ def _shanghaitech(
             label_src_dir = os.path.join(data_src_dir, "train_data", "ground-truth")
             image_src_paths = glob(os.path.join(image_src_dir, "*.jpg"))
             label_src_paths = glob(os.path.join(label_src_dir, "*.mat"))
-            assert len(image_src_paths) == len(label_src_paths) in [300, 400], f"Expected 300 (part_A) or 400 (part_B) images and labels, got {len(image_src_paths)} images and {len(label_src_paths)} labels"
+            assert len(image_src_paths) == len(label_src_paths) in [300, 400], (
+                f"Expected 300 (part_A) or 400 (part_B) images and labels, got {len(image_src_paths)} images and {len(label_src_paths)} labels"
+            )
         else:
             image_src_dir = os.path.join(data_src_dir, "test_data", "images")
             label_src_dir = os.path.join(data_src_dir, "test_data", "ground-truth")
             image_src_paths = glob(os.path.join(image_src_dir, "*.jpg"))
             label_src_paths = glob(os.path.join(label_src_dir, "*.mat"))
-            assert len(image_src_paths) == len(label_src_paths) in [182, 316], f"Expected 182 (part_A) or 316 (part_B) images and labels, got {len(image_src_paths)} images and {len(label_src_paths)} labels"
+            assert len(image_src_paths) == len(label_src_paths) in [182, 316], (
+                f"Expected 182 (part_A) or 316 (part_B) images and labels, got {len(image_src_paths)} images and {len(label_src_paths)} labels"
+            )
 
         sort_key = lambda x: int((os.path.basename(x).split(".")[0]).split("_")[-1])
         image_src_paths.sort(key=sort_key)
@@ -233,19 +218,14 @@ def _shanghaitech(
                 label_dst_dir=label_dst_dir,
                 generate_npy=generate_npy,
                 min_size=min_size,
-                max_size=max_size
+                max_size=max_size,
             )
 
         if split == "train":
             _generate_random_indices(len(image_src_paths), os.path.join(data_dst_dir, split))
 
-def _nwpu(
-    data_src_dir: str,
-    data_dst_dir: str,
-    min_size: int,
-    max_size: int,
-    generate_npy: bool = False
-) -> None:
+
+def _nwpu(data_src_dir: str, data_dst_dir: str, min_size: int, max_size: int, generate_npy: bool = False) -> None:
     for split in ["train", "val"]:
         generate_npy = generate_npy and split == "train"
         print(f"Processing {split}...")
@@ -276,12 +256,12 @@ def _nwpu(
                 label_dst_dir=label_dst_dir,
                 generate_npy=generate_npy,
                 min_size=min_size,
-                max_size=max_size
+                max_size=max_size,
             )
 
         if split == "train":
             _generate_random_indices(len(image_src_paths), os.path.join(data_dst_dir, split))
-    
+
     # preprocess the test set
     split = "test"
     print(f"Processing {split}...")
@@ -304,17 +284,11 @@ def _nwpu(
             label_dst_dir=None,
             generate_npy=generate_npy,
             min_size=min_size,
-            max_size=max_size
+            max_size=max_size,
         )
 
 
-def _qnrf(
-    data_src_dir: str,
-    data_dst_dir: str,
-    min_size: int,
-    max_size: int,
-    generate_npy: bool = False
-) -> None:
+def _qnrf(data_src_dir: str, data_dst_dir: str, min_size: int, max_size: int, generate_npy: bool = False) -> None:
     for split in ["train", "val"]:
         generate_npy = generate_npy and split == "train"
         print(f"Processing {split}...")
@@ -323,14 +297,18 @@ def _qnrf(
             label_src_dir = os.path.join(data_src_dir, "Train")
             image_src_paths = glob(os.path.join(image_src_dir, "*.jpg"))
             label_src_paths = glob(os.path.join(label_src_dir, "*.mat"))
-            assert len(image_src_paths) == len(label_src_paths) == 1201, f"Expected 1201 images and labels, got {len(image_src_paths)} images and {len(label_src_paths)} labels"
+            assert len(image_src_paths) == len(label_src_paths) == 1201, (
+                f"Expected 1201 images and labels, got {len(image_src_paths)} images and {len(label_src_paths)} labels"
+            )
         else:
             image_src_dir = os.path.join(data_src_dir, "Test")
             label_src_dir = os.path.join(data_src_dir, "Test")
             image_src_paths = glob(os.path.join(image_src_dir, "*.jpg"))
             label_src_paths = glob(os.path.join(label_src_dir, "*.mat"))
-            assert len(image_src_paths) == len(label_src_paths) == 334, f"Expected 334 images and labels, got {len(image_src_paths)} images and {len(label_src_paths)} labels"
-        
+            assert len(image_src_paths) == len(label_src_paths) == 334, (
+                f"Expected 334 images and labels, got {len(image_src_paths)} images and {len(label_src_paths)} labels"
+            )
+
         sort_key = lambda x: int((os.path.basename(x).split(".")[0]).split("_")[1])
         image_src_paths.sort(key=sort_key)
         label_src_paths.sort(key=sort_key)
@@ -339,7 +317,7 @@ def _qnrf(
         label_dst_dir = os.path.join(data_dst_dir, split, "labels")
         os.makedirs(image_dst_dir, exist_ok=True)
         os.makedirs(label_dst_dir, exist_ok=True)
-    
+
         size = len(str(len(image_src_paths)))
         for i, (image_src_path, label_src_path) in tqdm(enumerate(zip(image_src_paths, label_src_paths)), total=len(image_src_paths)):
             image_id = int((os.path.basename(image_src_path).split(".")[0]).split("_")[1])
@@ -356,19 +334,14 @@ def _qnrf(
                 label_dst_dir=label_dst_dir,
                 generate_npy=generate_npy,
                 min_size=min_size,
-                max_size=max_size
+                max_size=max_size,
             )
 
         if split == "train":
             _generate_random_indices(len(image_src_paths), os.path.join(data_dst_dir, split))
 
-def _jhu(
-    data_src_dir: str,
-    data_dst_dir: str,
-    min_size: int,
-    max_size: int,
-    generate_npy: bool = False
-) -> None:
+
+def _jhu(data_src_dir: str, data_dst_dir: str, min_size: int, max_size: int, generate_npy: bool = False) -> None:
     for split in ["train", "val"]:
         generate_npy = generate_npy and split == "train"
         if split == "train":
@@ -408,7 +381,7 @@ def _jhu(
             image = cv2.imread(image_src_path)
             with open(label_src_path, "r") as f:
                 label = f.read().splitlines()
-            label = np.array([list(map(float, line.split(" ")[0: 2])) for line in label])
+            label = np.array([list(map(float, line.split(" ")[0:2])) for line in label])
             _resize_and_save(
                 image=image,
                 label=label,
@@ -417,7 +390,7 @@ def _jhu(
                 label_dst_dir=label_dst_dir,
                 generate_npy=generate_npy,
                 min_size=min_size,
-                max_size=max_size
+                max_size=max_size,
             )
 
         if split == "train":
@@ -427,11 +400,7 @@ def _jhu(
 def parse_args():
     parser = ArgumentParser(description="Pre-process datasets to resize images and labeld into a given range.")
     parser.add_argument(
-        "--dataset",
-        type=str,
-        choices=["nwpu", "ucf_qnrf", "jhu", "shanghaitech_a", "shanghaitech_b"],
-        required=True,
-        help="The dataset to pre-process."
+        "--dataset", type=str, choices=["nwpu", "ucf_qnrf", "jhu", "shanghaitech_a", "shanghaitech_b"], required=True, help="The dataset to pre-process."
     )
     parser.add_argument("--src_dir", type=str, required=True, help="The root directory of the source dataset.")
     parser.add_argument("--dst_dir", type=str, required=True, help="The root directory of the destination dataset.")
@@ -454,5 +423,5 @@ if __name__ == "__main__":
         data_dst_dir=args.dst_dir,
         min_size=args.min_size,
         max_size=args.max_size,
-        generate_npy=args.generate_npy
+        generate_npy=args.generate_npy,
     )

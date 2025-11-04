@@ -51,9 +51,9 @@ def cosine_annealing_warm_restarts(
             T_i = T_0
         else:
             n = int(math.log((epoch / T_0 * (T_mult - 1) + 1), T_mult))
-            T_cur = epoch - T_0 * (T_mult ** n - 1) / (T_mult - 1)
+            T_cur = epoch - T_0 * (T_mult**n - 1) / (T_mult - 1)
             T_i = T_0 * T_mult ** (n)
-        
+
         lr = eta_min + (base_lr - eta_min) * (1 + math.cos(math.pi * T_cur / T_i)) / 2
 
     return lr / base_lr
@@ -61,7 +61,9 @@ def cosine_annealing_warm_restarts(
 
 def get_loss_fn(args: ArgumentParser) -> nn.Module:
     if args.bins is None:
-        assert args.weight_ot is not None and args.weight_tv is not None, f"Expected weight_ot and weight_tv to be not None, got {args.weight_ot} and {args.weight_tv}"
+        assert args.weight_ot is not None and args.weight_tv is not None, (
+            f"Expected weight_ot and weight_tv to be not None, got {args.weight_ot} and {args.weight_tv}"
+        )
         loss_fn = losses.DMLoss(
             input_size=args.input_size,
             reduction=args.reduction,
@@ -78,11 +80,7 @@ def get_loss_fn(args: ArgumentParser) -> nn.Module:
 
 
 def get_optimizer(args: ArgumentParser, model: nn.Module) -> Tuple[Adam, LambdaLR]:
-    optimizer = Adam(
-        params=filter(lambda p: p.requires_grad, model.parameters()),
-        lr=args.lr,
-        weight_decay=args.weight_decay
-    )
+    optimizer = Adam(params=filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, weight_decay=args.weight_decay)
 
     scheduler = LambdaLR(
         optimizer=optimizer,
@@ -93,7 +91,7 @@ def get_optimizer(args: ArgumentParser, model: nn.Module) -> Tuple[Adam, LambdaL
             T_0=args.T_0,
             T_mult=args.T_mult,
             eta_min=args.eta_min,
-            base_lr=args.lr
+            base_lr=args.lr,
         ),
     )
 

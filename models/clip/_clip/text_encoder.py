@@ -37,7 +37,7 @@ class CLIPTextEncoder(nn.Module):
         mask.fill_(float("-inf"))
         mask.triu_(1)  # zero out the lower diagonal
         return mask
-    
+
     @property
     def dtype(self):
         return self.transformer.resblocks[0].attn.in_proj_weight.dtype

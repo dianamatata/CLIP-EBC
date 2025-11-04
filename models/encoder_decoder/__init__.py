@@ -10,8 +10,21 @@ from .csrnet import csrnet, csrnet_bn
 
 
 __all__ = [
-    "vgg11_ae", "vgg11_bn_ae", "vgg13_ae", "vgg13_bn_ae", "vgg16_ae", "vgg16_bn_ae", "vgg19_ae", "vgg19_bn_ae",
-    "resnet18_ae", "resnet34_ae", "resnet50_ae", "resnet101_ae", "resnet152_ae",
-    "cannet", "cannet_bn",
-    "csrnet", "csrnet_bn",
+    "vgg11_ae",
+    "vgg11_bn_ae",
+    "vgg13_ae",
+    "vgg13_bn_ae",
+    "vgg16_ae",
+    "vgg16_bn_ae",
+    "vgg19_ae",
+    "vgg19_bn_ae",
+    "resnet18_ae",
+    "resnet34_ae",
+    "resnet50_ae",
+    "resnet101_ae",
+    "resnet152_ae",
+    "cannet",
+    "cannet_bn",
+    "csrnet",
+    "csrnet_bn",
 ]

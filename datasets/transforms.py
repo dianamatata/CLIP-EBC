@@ -31,7 +31,11 @@ def _resize(
     width: int,
 ) -> Tuple[Tensor, Tensor]:
     image_height, image_width = image.shape[-2:]
-    image = TF.resize(image, (height, width), interpolation=TF.InterpolationMode.BICUBIC, antialias=True) if (image_height != height or image_width != width) else image
+    image = (
+        TF.resize(image, (height, width), interpolation=TF.InterpolationMode.BICUBIC, antialias=True)
+        if (image_height != height or image_width != width)
+        else image
+    )
     if len(label) > 0 and (image_height != height or image_width != width):
         label[:, 0] = label[:, 0] * width / image_width
         label[:, 1] = label[:, 1] * height / image_height
@@ -49,9 +53,10 @@ class RandomCrop(object):
     def __call__(self, image: Tensor, label: Tensor) -> Tuple[Tensor, Tensor]:
         crop_height, crop_width = self.size
         image_height, image_width = image.shape[-2:]
-        assert crop_height <= image_height and crop_width <= image_width, \
+        assert crop_height <= image_height and crop_width <= image_width, (
             f"crop size should be no larger than image size, got crop size {self.size} and image size {image.shape}."
-        
+        )
+
         top = torch.randint(0, image_height - crop_height + 1, (1,)).item()
         left = torch.randint(0, image_width - crop_width + 1, (1,)).item()
         return _crop(image, label, top, left, crop_height, crop_width)
@@ -72,6 +77,7 @@ class Resize2Multiple(object):
         img_h = window_h + stride_h * n_h
         img_w = window_w + stride_w * n_w
     """
+
     def __init__(
         self,
         window_size: Tuple[int, int],
@@ -130,9 +136,13 @@ class ZeroPad2Multiple(object):
         if new_height == image_height and new_width == image_width:
             return image, label
         else:
-            assert new_height >= image_height and new_width >= image_width, f"new size should be no less than the original size, got {new_height} and {new_width}."
+            assert new_height >= image_height and new_width >= image_width, (
+                f"new size should be no less than the original size, got {new_height} and {new_width}."
+            )
             pad_height, pad_width = new_height - image_height, new_width - image_width
-            return TF.pad(image, (0, 0, pad_width, pad_height), fill=0), label  # only pad the right and bottom sides so that the label coordinates are not affected
+            return TF.pad(
+                image, (0, 0, pad_width, pad_height), fill=0
+            ), label  # only pad the right and bottom sides so that the label coordinates are not affected
 
 
 class RandomResizedCrop(object):
@@ -171,15 +181,18 @@ class RandomResizedCrop(object):
 
         else:  # resize the image and then crop
             ratio = max(crop_height / in_height, crop_width / in_width)  # keep the aspect ratio
-            resize_height, resize_width = int(in_height * ratio) + 1, int(in_width * ratio) + 1  # add 1 to make sure the resized image is no less than the crop size
+            resize_height, resize_width = (
+                int(in_height * ratio) + 1,
+                int(in_width * ratio) + 1,
+            )  # add 1 to make sure the resized image is no less than the crop size
             image, label = _resize(image, label, resize_height, resize_width)
-            
+
             top = torch.randint(0, resize_height - crop_height + 1, (1,)).item()
             left = torch.randint(0, resize_width - crop_width + 1, (1,)).item()
 
         image, label = _crop(image, label, top, left, crop_height, crop_width)
         return _resize(image, label, out_height, out_width)
-        
+
 
 class RandomHorizontalFlip(object):
     def __init__(self, p: float = 0.5) -> None:
@@ -195,7 +208,7 @@ class RandomHorizontalFlip(object):
                 label[:, 0] = label[:, 0].clamp(min=0, max=image.shape[-1] - 1)
 
         return image, label
-    
+
 
 class ColorJitter(object):
     def __init__(
@@ -206,10 +219,10 @@ class ColorJitter(object):
         hue: Union[float, Tuple[float, float]] = 0.2,
     ) -> None:
         self.color_jitter = _ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
-    
+
     def __call__(self, image: Tensor, label: Tensor) -> Tuple[Tensor, Tensor]:
         return self.color_jitter(image), label
-    
+
 
 class RandomGrayscale(object):
     def __init__(self, p: float = 0.1) -> None:
@@ -221,7 +234,7 @@ class RandomGrayscale(object):
             image = TF.rgb_to_grayscale(image, num_output_channels=3)
 
         return image, label
-    
+
 
 class GaussianBlur(object):
     def __init__(self, kernel_size: int, sigma: Optional[float] = None) -> None:
@@ -257,6 +270,6 @@ class PepperSaltNoise(object):
 
     def __call__(self, image: Tensor, label: Tensor) -> Tuple[Tensor, Tensor]:
         noise = torch.rand_like(image)
-        image = torch.where(noise < self.saltiness, 1., image)  # Salt
-        image = torch.where(noise > 1 - self.spiciness, 0., image)    # Pepper
+        image = torch.where(noise < self.saltiness, 1.0, image)  # Salt
+        image = torch.where(noise > 1 - self.spiciness, 0.0, image)  # Pepper
         return image, label

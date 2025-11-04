@@ -27,7 +27,7 @@ class ContextualModule(nn.Module):
         weight_feature = feature - scale_feature
         weight_feature = self.weight_net(weight_feature)
         return F.sigmoid(weight_feature)
-    
+
     def __make_scale__(self, channels: int, size: int) -> nn.Module:
         return nn.Sequential(
             nn.AdaptiveAvgPool2d(output_size=(size, size)),
@@ -80,6 +80,7 @@ class CANNet(nn.Module):
 
 def cannet(sizes=[1, 2, 3, 6], reduction: int = 8) -> CANNet:
     return CANNet(csrnet(), sizes=sizes, reduction=reduction)
+
 
 def cannet_bn(sizes=[1, 2, 3, 6], reduction: int = 8) -> CANNet:
     return CANNet(csrnet_bn(), sizes=sizes, reduction=reduction)

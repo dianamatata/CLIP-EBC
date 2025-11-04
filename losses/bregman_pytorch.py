@@ -78,7 +78,7 @@ def sinkhorn(
     assert na >= 1 and nb >= 1, f"C needs to be 2d. Found C.shape = {C.shape}"
     assert na == a.shape[0] and nb == b.shape[0], f"Shape of a ({a.shape}) or b ({b.shape}) does not match that of C ({C.shape})"
     assert reg > 0, f"reg should be greater than 0. Found reg = {reg}"
-    assert a.min() >= 0. and b.min() >= 0., f"Elements in a and b should be nonnegative. Found a.min() = {a.min()}, b.min() = {b.min()}"
+    assert a.min() >= 0.0 and b.min() >= 0.0, f"Elements in a and b should be nonnegative. Found a.min() = {a.min()}, b.min() = {b.min()}"
 
     if log:
         log = {"err": []}
@@ -99,7 +99,7 @@ def sinkhorn(
     KTu = torch.empty(v.shape, dtype=v.dtype).to(device)
     Kv = torch.empty(u.shape, dtype=u.dtype).to(device)
 
-    while (err > stopThr and it <= maxIter):
+    while err > stopThr and it <= maxIter:
         upre, vpre = u, v
         # torch.matmul(u, K, out=KTu)
         KTu = torch.matmul(u.view(1, -1), K).view(-1)
@@ -108,8 +108,7 @@ def sinkhorn(
         Kv = torch.matmul(K, v.view(-1, 1)).view(-1)
         u = torch.div(a, Kv + M_EPS)
 
-        if torch.any(torch.isnan(u)) or torch.any(torch.isnan(v)) or \
-                torch.any(torch.isinf(u)) or torch.any(torch.isinf(v)):
+        if torch.any(torch.isnan(u)) or torch.any(torch.isnan(v)) or torch.any(torch.isinf(u)) or torch.any(torch.isinf(v)):
             print("Warning: numerical errors at iteration", it)
             u, v = upre, vpre
             break

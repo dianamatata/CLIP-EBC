@@ -36,5 +36,7 @@ def evaluate(
 
     pred_counts = np.array([item for sublist in pred_counts for item in sublist])
     target_counts = np.array([item for sublist in target_counts for item in sublist])
-    assert len(pred_counts) == len(target_counts), f"Length of predictions and ground truths should be equal, but got {len(pred_counts)} and {len(target_counts)}"
+    assert len(pred_counts) == len(target_counts), (
+        f"Length of predictions and ground truths should be equal, but got {len(pred_counts)} and {len(target_counts)}"
+    )
     return calculate_errors(pred_counts, target_counts)

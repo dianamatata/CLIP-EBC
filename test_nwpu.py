@@ -45,7 +45,9 @@ def main(args: ArgumentParser):
         with open(os.path.join(current_dir, "configs", f"reduction_{args.reduction}.json"), "r") as f:
             config = json.load(f)[str(args.truncation)]["nwpu"]
         bins = config["bins"][args.granularity]
-        anchor_points = config["anchor_points"][args.granularity]["average"] if args.anchor_points == "average" else config["anchor_points"][args.granularity]["middle"]
+        anchor_points = (
+            config["anchor_points"][args.granularity]["average"] if args.anchor_points == "average" else config["anchor_points"][args.granularity]["middle"]
+        )
         bins = [(float(b[0]), float(b[1])) for b in bins]
         anchor_points = [float(p) for p in anchor_points]
 
@@ -54,14 +56,14 @@ def main(args: ArgumentParser):
 
     model = get_model(
         backbone=args.model,
-        input_size=args.input_size, 
+        input_size=args.input_size,
         reduction=args.reduction,
         bins=bins,
         anchor_points=anchor_points,
         prompt_type=args.prompt_type,
         num_vpt=args.num_vpt,
         vpt_drop=args.vpt_drop,
-        deep_vpt=not args.shallow_vpt
+        deep_vpt=not args.shallow_vpt,
     )
     state_dict = torch.load(args.weight_path, map_location="cpu")
     state_dict = state_dict if "best" in os.path.basename(args.weight_path) else state_dict["model_state_dict"]
@@ -131,7 +133,7 @@ if __name__ == "__main__":
         args.num_vpt = None
         args.vpt_drop = None
         args.shallow_vpt = None
-    
+
     if "clip" not in args.model:
         args.prompt_type = None
 
@@ -145,7 +147,7 @@ if __name__ == "__main__":
         args.stride = None
         args.zero_pad_to_multiple = False
         args.resize_to_multiple = False
-    
+
     main(args)
 
 # Example usage:

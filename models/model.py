@@ -47,7 +47,9 @@ class Classifier(nn.Module):
 
         assert len(bins) == len(anchor_points), f"Expected bins and anchor_points to have the same length, got {len(bins)} and {len(anchor_points)}"
         assert all(len(b) == 2 for b in bins), f"Expected bins to be a list of tuples of length 2, got {bins}"
-        assert all(bin[0] <= p <= bin[1] for bin, p in zip(bins, anchor_points)), f"Expected anchor_points to be within the range of the corresponding bin, got {bins} and {anchor_points}"
+        assert all(bin[0] <= p <= bin[1] for bin, p in zip(bins, anchor_points)), (
+            f"Expected anchor_points to be within the range of the corresponding bin, got {bins} and {anchor_points}"
+        )
 
         self.bins = bins
         self.anchor_points = torch.tensor(anchor_points, dtype=torch.float32, requires_grad=False).view(1, -1, 1, 1)

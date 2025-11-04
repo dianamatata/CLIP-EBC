@@ -41,14 +41,15 @@ def csrnet(reduction: int = 8) -> CSRNet:
     model = CSRNet(
         make_vgg_layers(encoder_cfg, in_channels=3, batch_norm=False, dilation=1),
         make_vgg_layers(decoder_cfg, in_channels=512, batch_norm=False, dilation=2),
-        reduction=reduction
+        reduction=reduction,
     )
     return _load_weights(model, vgg_urls["vgg16"])
+
 
 def csrnet_bn(reduction: int = 8) -> CSRNet:
     model = CSRNet(
         make_vgg_layers(encoder_cfg, in_channels=3, batch_norm=True, dilation=1),
         make_vgg_layers(decoder_cfg, in_channels=512, batch_norm=True, dilation=2),
-        reduction=reduction
+        reduction=reduction,
     )
     return _load_weights(model, vgg_urls["vgg16"])

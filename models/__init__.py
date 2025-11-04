@@ -19,14 +19,7 @@ def get_model(
     if "clip" in backbone:
         backbone = backbone[5:]
         assert backbone in clip_names, f"Expected backbone to be in {clip_names}, got {backbone}"
-        return _clip_ebc(
-            backbone=backbone,
-            input_size=input_size,
-            reduction=reduction,
-            bins=bins,
-            anchor_points=anchor_points,
-            **kwargs
-        )
+        return _clip_ebc(backbone=backbone, input_size=input_size, reduction=reduction, bins=bins, anchor_points=anchor_points, **kwargs)
     elif bins is None and anchor_points is None:
         return _regressor(
             backbone=backbone,

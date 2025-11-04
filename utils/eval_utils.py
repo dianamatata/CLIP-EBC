@@ -43,7 +43,9 @@ def sliding_window_predict(
     stride = (int(stride), int(stride)) if isinstance(stride, (int, float)) else stride
     window_size = tuple(window_size)
     stride = tuple(stride)
-    assert isinstance(window_size, tuple) and len(window_size) == 2 and window_size[0] > 0 and window_size[1] > 0, f"Window size must be a positive integer tuple (h, w), got {window_size}"
+    assert isinstance(window_size, tuple) and len(window_size) == 2 and window_size[0] > 0 and window_size[1] > 0, (
+        f"Window size must be a positive integer tuple (h, w), got {window_size}"
+    )
     assert isinstance(stride, tuple) and len(stride) == 2 and stride[0] > 0 and stride[1] > 0, f"Stride must be a positive integer tuple (h, w), got {stride}"
     assert stride[0] <= window_size[0] and stride[1] <= window_size[1], f"Stride must be smaller than window size, got {stride} and {window_size}"
 
@@ -54,7 +56,9 @@ def sliding_window_predict(
     num_rows = int(np.ceil((image_height - window_height) / stride_height) + 1)
     num_cols = int(np.ceil((image_width - window_width) / stride_width) + 1)
 
-    reduction = model.reduction if hasattr(model, "reduction") else 1  # reduction factor of the model. For example, if reduction = 8, then the density map will be reduced by 8x.
+    reduction = (
+        model.reduction if hasattr(model, "reduction") else 1
+    )  # reduction factor of the model. For example, if reduction = 8, then the density map will be reduced by 8x.
     windows = []
     for i in range(num_rows):
         for j in range(num_cols):
@@ -88,8 +92,8 @@ def sliding_window_predict(
             if y_end > image_width:
                 y_start, y_end = image_width - window_width, image_width
 
-            pred_map[:, (x_start // reduction): (x_end // reduction), (y_start // reduction): (y_end // reduction)] += preds[idx, :, :, :]
-            count_map[:, (x_start // reduction): (x_end // reduction), (y_start // reduction): (y_end // reduction)] += 1.
+            pred_map[:, (x_start // reduction) : (x_end // reduction), (y_start // reduction) : (y_end // reduction)] += preds[idx, :, :, :]
+            count_map[:, (x_start // reduction) : (x_end // reduction), (y_start // reduction) : (y_end // reduction)] += 1.0
             idx += 1
 
     pred_map /= count_map  # average the overlapping regions

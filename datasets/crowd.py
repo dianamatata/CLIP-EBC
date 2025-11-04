@@ -13,22 +13,33 @@ from .utils import get_id, generate_density_map
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 
 available_datasets = [
-    "shanghaitech_a", "sha",
-    "popcorn", "mussel",
-    "shanghaitech_b", "shb",
-    "ucf_qnrf", "qnrf", "ucf-qnrf",
-    "nwpu", "nwpu_crowd", "nwpu-crowd",
-    "jhu", "jhu_crowd", "jhu_crowd_v2"
+    "shanghaitech_a",
+    "sha",
+    "popcorn",
+    "mussel",
+    "shanghaitech_b",
+    "shb",
+    "ucf_qnrf",
+    "qnrf",
+    "ucf-qnrf",
+    "nwpu",
+    "nwpu_crowd",
+    "nwpu-crowd",
+    "jhu",
+    "jhu_crowd",
+    "jhu_crowd_v2",
 ]
+
 
 def load_points_from_txt(txt_path):
     points = []
-    with open(txt_path, 'r') as f:
+    with open(txt_path, "r") as f:
         for line in f:
             if line.strip():
                 x, y = map(float, line.strip().split())
                 points.append([x, y])
     return np.array(points, dtype=np.float32)
+
 
 def standardize_dataset_name(dataset: str) -> str:
     assert dataset.lower() in available_datasets, f"Dataset {dataset} is not available."
@@ -123,9 +134,13 @@ class Crowd(Dataset):
     def __check_sanity__(self) -> None:
         if self.dataset == "sha":
             if self.split == "train":
-                assert len(self.image_names) == len(self.label_names) == 300, f"ShanghaiTech_A train split should have 300 images, but found {len(self.image_names)}."
+                assert len(self.image_names) == len(self.label_names) == 300, (
+                    f"ShanghaiTech_A train split should have 300 images, but found {len(self.image_names)}."
+                )
             else:
-                assert len(self.image_names) == len(self.label_names) == 182, f"ShanghaiTech_A val split should have 182 images, but found {len(self.image_names)}."
+                assert len(self.image_names) == len(self.label_names) == 182, (
+                    f"ShanghaiTech_A val split should have 182 images, but found {len(self.image_names)}."
+                )
         if self.dataset == "popcorn":
             if self.split == "train":
                 assert len(self.image_names) == len(self.label_names) == 3, f"popcorn train split should have 3 images, but found {len(self.image_names)}."
@@ -133,9 +148,13 @@ class Crowd(Dataset):
                 assert len(self.image_names) == len(self.label_names) == 2, f"popcorn val split should have 2 images, but found {len(self.image_names)}."
         elif self.dataset == "shb":
             if self.split == "train":
-                assert len(self.image_names) == len(self.label_names) == 400, f"ShanghaiTech_B train split should have 400 images, but found {len(self.image_names)}."
+                assert len(self.image_names) == len(self.label_names) == 400, (
+                    f"ShanghaiTech_B train split should have 400 images, but found {len(self.image_names)}."
+                )
             else:
-                assert len(self.image_names) == len(self.label_names) == 316, f"ShanghaiTech_B val split should have 316 images, but found {len(self.image_names)}."
+                assert len(self.image_names) == len(self.label_names) == 316, (
+                    f"ShanghaiTech_B val split should have 316 images, but found {len(self.image_names)}."
+                )
         elif self.dataset == "nwpu":
             if self.split == "train":
                 assert len(self.image_names) == len(self.label_names) == 3109, f"NWPU train split should have 3109 images, but found {len(self.image_names)}."
@@ -143,7 +162,9 @@ class Crowd(Dataset):
                 assert len(self.image_names) == len(self.label_names) == 500, f"NWPU val split should have 500 images, but found {len(self.image_names)}."
         elif self.dataset == "qnrf":
             if self.split == "train":
-                assert len(self.image_names) == len(self.label_names) == 1201, f"UCF_QNRF train split should have 1201 images, but found {len(self.image_names)}."
+                assert len(self.image_names) == len(self.label_names) == 1201, (
+                    f"UCF_QNRF train split should have 1201 images, but found {len(self.image_names)}."
+                )
             else:
                 assert len(self.image_names) == len(self.label_names) == 334, f"UCF_QNRF val split should have 334 images, but found {len(self.image_names)}."
         else:  # self.dataset == "jhu"
@@ -154,7 +175,7 @@ class Crowd(Dataset):
 
     def __len__(self) -> int:
         return len(self.image_names)
-    
+
     def __getitem__(self, idx: int) -> Union[Tuple[Tensor, Tensor, Tensor], Tuple[Tensor, Tensor, Tensor, str]]:
         image_name = self.image_names[idx]
         label_name = self.label_names[idx]
@@ -165,7 +186,7 @@ class Crowd(Dataset):
         if self.image_type == "npy":
             with open(image_path, "rb") as f:
                 image = np.load(f)
-            image = torch.from_numpy(image).float() / 255.  # normalize to [0, 1]
+            image = torch.from_numpy(image).float() / 255.0  # normalize to [0, 1]
         else:
             with open(image_path, "rb") as f:
                 image = Image.open(f).convert("RGB")
@@ -188,7 +209,9 @@ class Crowd(Dataset):
 
         images = [self.normalize(img) for img in images]
         if idx in self.indices:
-            density_maps = torch.stack([generate_density_map(label, image.shape[-2], image.shape[-1], sigma=self.sigma) for image, label in zip(images, labels)], 0)
+            density_maps = torch.stack(
+                [generate_density_map(label, image.shape[-2], image.shape[-1], sigma=self.sigma) for image, label in zip(images, labels)], 0
+            )
         else:
             labels = None
             density_maps = None
@@ -236,7 +259,7 @@ class NWPUTest(Dataset):
 
     def __len__(self) -> int:
         return len(self.image_names)
-    
+
     def __getitem__(self, idx: int) -> Union[Tensor, Tuple[Tensor, str]]:
         image_name = self.image_names[idx]
         image_path = os.path.join(self.root, "test", "images", image_name)
@@ -244,12 +267,12 @@ class NWPUTest(Dataset):
         if self.image_type == "npy":
             with open(image_path, "rb") as f:
                 image = np.load(f)
-            image = torch.from_numpy(image).float() / 255.
+            image = torch.from_numpy(image).float() / 255.0
         else:
             with open(image_path, "rb") as f:
                 image = Image.open(f).convert("RGB")
             image = self.to_tensor(image)
-        
+
         label = torch.tensor([], dtype=torch.float)  # dummy label
         image, _ = self.transforms(image, label) if self.transforms is not None else (image, label)
         image = self.normalize(image)

@@ -68,7 +68,7 @@ class CLIP_EBC(nn.Module):
             self.deep_vpt = deep_vpt
 
             patch_size = self.image_encoder.patch_size[0]
-            val = math.sqrt(6. / float(3 * patch_size + self.image_encoder.channels))
+            val = math.sqrt(6.0 / float(3 * patch_size + self.image_encoder.channels))
 
             for idx in range(self.image_encoder_depth if self.deep_vpt else 1):
                 setattr(self, f"vpt_{idx}", nn.Parameter(torch.empty(self.num_vpt, self.image_encoder.channels)))
@@ -147,25 +147,33 @@ class CLIP_EBC(nn.Module):
         image_features = self.image_encoder.conv1(x)
         image_features = image_features.reshape(batch_size, image_features.shape[1], -1)
         image_features = image_features.permute(0, 2, 1)  # (B, num_patches, C)
-        image_features = torch.cat([
-            self.image_encoder.class_embedding + torch.zeros(batch_size, 1, image_features.shape[-1], dtype=image_features.dtype, device=device),
-            image_features,
-        ], dim=1)  # (B, num_patches + 1, C)
+        image_features = torch.cat(
+            [
+                self.image_encoder.class_embedding + torch.zeros(batch_size, 1, image_features.shape[-1], dtype=image_features.dtype, device=device),
+                image_features,
+            ],
+            dim=1,
+        )  # (B, num_patches + 1, C)
 
         pos_embedding = self.image_encoder._interpolate_pos_embed(num_h_patches, num_w_patches)
         image_features = image_features + pos_embedding
         image_features = self.image_encoder.ln_pre(image_features)
         image_features = image_features.permute(1, 0, 2)  # (num_patches + 1, B, C)
-        assert image_features.shape[0] == num_h_patches * num_w_patches + 1 and image_features.shape[1] == batch_size, f"Expected image_features to have shape [num_patches + 1, B, C], got {image_features.shape}."
+        assert image_features.shape[0] == num_h_patches * num_w_patches + 1 and image_features.shape[1] == batch_size, (
+            f"Expected image_features to have shape [num_patches + 1, B, C], got {image_features.shape}."
+        )
 
         vpt = self._prepare_vpt(0, batch_size, device)
         for idx in range(self.image_encoder_depth):
             # assemble
-            image_features = torch.cat([
-                image_features[:1, :, :],  # CLS token
-                vpt,
-                image_features[1:, :, :],
-            ], dim=0)
+            image_features = torch.cat(
+                [
+                    image_features[:1, :, :],  # CLS token
+                    vpt,
+                    image_features[1:, :, :],
+                ],
+                dim=0,
+            )
 
             # transformer
             image_features = self.image_encoder.transformer.resblocks[idx](image_features)
@@ -175,13 +183,16 @@ class CLIP_EBC(nn.Module):
                 if self.deep_vpt:
                     vpt = self._prepare_vpt(idx + 1, batch_size, device)
                 else:
-                    vpt = image_features[1: (self.num_vpt + 1), :, :]
+                    vpt = image_features[1 : (self.num_vpt + 1), :, :]
 
-            image_features = torch.cat([
-                image_features[:1, :, :],  # CLS token
-                image_features[(self.num_vpt + 1):, :, :],
-            ], dim=0)
-            
+            image_features = torch.cat(
+                [
+                    image_features[:1, :, :],  # CLS token
+                    image_features[(self.num_vpt + 1) :, :, :],
+                ],
+                dim=0,
+            )
+
         image_features = image_features.permute(1, 0, 2)  # (B, num_patches + 1, C)
         image_features = self.image_encoder.ln_post(image_features)
         image_features = image_features[:, 1:, :].permute(0, 2, 1)  # (B, C, num_patches)
@@ -229,7 +240,7 @@ def _clip_ebc(
     deep_vpt: Optional[bool] = None,
     vpt_drop: Optional[float] = None,
     decoder_block: Optional[nn.Module] = None,
-    decoder_cfg: Optional[List[Union[str, int]]] = None
+    decoder_cfg: Optional[List[Union[str, int]]] = None,
 ) -> CLIP_EBC:
     if backbone in resnet_backbones:
         decoder_block = Bottleneck

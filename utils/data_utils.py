@@ -13,15 +13,20 @@ import datasets
 
 def get_dataloader(args: ArgumentParser, split: str = "train", ddp: bool = False) -> Union[Tuple[DataLoader, Union[DistributedSampler, None]], DataLoader]:
     if split == "train":  # train, strong augmentation
-        transforms = Compose([
-            datasets.RandomResizedCrop((args.input_size, args.input_size), scale=(args.min_scale, args.max_scale)),
-            datasets.RandomHorizontalFlip(),
-            datasets.RandomApply([
-                datasets.ColorJitter(brightness=args.brightness, contrast=args.contrast, saturation=args.saturation, hue=args.hue),
-                datasets.GaussianBlur(kernel_size=args.kernel_size, sigma=(0.1, 5.0)),
-                datasets.PepperSaltNoise(saltiness=args.saltiness, spiciness=args.spiciness),
-            ], p=(args.jitter_prob, args.blur_prob, args.noise_prob)),
-        ])
+        transforms = Compose(
+            [
+                datasets.RandomResizedCrop((args.input_size, args.input_size), scale=(args.min_scale, args.max_scale)),
+                datasets.RandomHorizontalFlip(),
+                datasets.RandomApply(
+                    [
+                        datasets.ColorJitter(brightness=args.brightness, contrast=args.contrast, saturation=args.saturation, hue=args.hue),
+                        datasets.GaussianBlur(kernel_size=args.kernel_size, sigma=(0.1, 5.0)),
+                        datasets.PepperSaltNoise(saltiness=args.saltiness, spiciness=args.spiciness),
+                    ],
+                    p=(args.jitter_prob, args.blur_prob, args.noise_prob),
+                ),
+            ]
+        )
 
     elif args.sliding_window:
         if args.resize_to_multiple:

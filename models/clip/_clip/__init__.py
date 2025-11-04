@@ -37,8 +37,12 @@ for name in clip_model_names + clip_image_encoder_names + clip_text_encoder_name
 
 
 for name in clip_model_names + clip_image_encoder_names + clip_text_encoder_names:
-    assert os.path.exists(os.path.join(curr_dir, "weights", f"{name}.pth")), f"Missing {name}.pth in weights folder. Please run models/clip/prepare.py to download the weights."
-    assert os.path.exists(os.path.join(curr_dir, "configs", f"{name}.json")), f"Missing {name}.json in configs folder. Please run models/clip/prepare.py to download the configs."
+    assert os.path.exists(os.path.join(curr_dir, "weights", f"{name}.pth")), (
+        f"Missing {name}.pth in weights folder. Please run models/clip/prepare.py to download the weights."
+    )
+    assert os.path.exists(os.path.join(curr_dir, "configs", f"{name}.json")), (
+        f"Missing {name}.json in configs folder. Please run models/clip/prepare.py to download the configs."
+    )
 
 
 def _clip(name: str, input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
@@ -57,7 +61,7 @@ def _clip(name: str, input_size: Optional[Union[int, Tuple[int, int]]] = None) -
         vocab_size=config["vocab_size"],
         transformer_width=config["transformer_width"],
         transformer_heads=config["transformer_heads"],
-        transformer_layers=config["transformer_layers"]
+        transformer_layers=config["transformer_layers"],
     )
     state_dict = torch.load(os.path.join(curr_dir, "weights", f"clip_{name}.pth"), map_location="cpu")
     model.load_state_dict(state_dict, strict=True)
@@ -70,13 +74,7 @@ def _clip(name: str, input_size: Optional[Union[int, Tuple[int, int]]] = None) -
     return model
 
 
-def _resnet(
-    name: str,
-    reduction: int = 32,
-    features_only: bool = False,
-    out_indices: Optional[Tuple[int, ...]] = None,
-    **kwargs: Any
-) -> ModifiedResNet:
+def _resnet(name: str, reduction: int = 32, features_only: bool = False, out_indices: Optional[Tuple[int, ...]] = None, **kwargs: Any) -> ModifiedResNet:
     with open(os.path.join(curr_dir, "configs", f"clip_image_encoder_{name}.json"), "r") as f:
         config = json.load(f)
     model = ModifiedResNet(
@@ -87,7 +85,7 @@ def _resnet(
         heads=config["vision_heads"],
         features_only=features_only,
         out_indices=out_indices,
-        reduction=reduction
+        reduction=reduction,
     )
     state_dict = torch.load(os.path.join(curr_dir, "weights", f"clip_image_encoder_{name}.pth"), map_location="cpu")
     missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
@@ -110,7 +108,7 @@ def _vit(name: str, features_only: bool = False, input_size: Optional[Union[int,
         width=config["vision_width"],
         layers=config["vision_layers"],
         heads=config["vision_heads"],
-        features_only=features_only
+        features_only=features_only,
     )
     state_dict = torch.load(os.path.join(curr_dir, "weights", f"clip_image_encoder_{name}.pth"), map_location="cpu")
     missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
@@ -135,7 +133,7 @@ def _text_encoder(name: str) -> CLIPTextEncoder:
         vocab_size=config["vocab_size"],
         transformer_width=config["transformer_width"],
         transformer_heads=config["transformer_heads"],
-        transformer_layers=config["transformer_layers"]
+        transformer_layers=config["transformer_layers"],
     )
     state_dict = torch.load(os.path.join(curr_dir, "weights", f"clip_text_encoder_{name}.pth"), map_location="cpu")
     missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
@@ -148,31 +146,38 @@ def _text_encoder(name: str) -> CLIPTextEncoder:
     return model
 
 
-
 # CLIP models
 def resnet50_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("resnet50", input_size)
 
+
 def resnet101_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("resnet101", input_size)
+
 
 def resnet50x4_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("resnet50x4", input_size)
 
+
 def resnet50x16_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("resnet50x16", input_size)
+
 
 def resnet50x64_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("resnet50x64", input_size)
 
+
 def vit_b_32_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("vit_b_32", input_size)
+
 
 def vit_b_16_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("vit_b_16", input_size)
 
+
 def vit_l_14_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("vit_l_14", input_size)
+
 
 def vit_l_14_336px_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None) -> CLIP:
     return _clip("vit_l_14_336px", input_size)
@@ -182,26 +187,34 @@ def vit_l_14_336px_clip(input_size: Optional[Union[int, Tuple[int, int]]] = None
 def resnet50_img(features_only: bool = False, out_indices: Optional[Tuple[int, ...]] = None, **kwargs: Any) -> ModifiedResNet:
     return _resnet("resnet50", features_only=features_only, out_indices=out_indices, **kwargs)
 
+
 def resnet101_img(features_only: bool = False, out_indices: Optional[Tuple[int, ...]] = None, **kwargs: Any) -> ModifiedResNet:
     return _resnet("resnet101", features_only=features_only, out_indices=out_indices, **kwargs)
+
 
 def resnet50x4_img(features_only: bool = False, out_indices: Optional[Tuple[int, ...]] = None, **kwargs: Any) -> ModifiedResNet:
     return _resnet("resnet50x4", features_only=features_only, out_indices=out_indices, **kwargs)
 
+
 def resnet50x16_img(features_only: bool = False, out_indices: Optional[Tuple[int, ...]] = None, **kwargs: Any) -> ModifiedResNet:
     return _resnet("resnet50x16", features_only=features_only, out_indices=out_indices, **kwargs)
+
 
 def resnet50x64_img(features_only: bool = False, out_indices: Optional[Tuple[int, ...]] = None, **kwargs: Any) -> ModifiedResNet:
     return _resnet("resnet50x64", features_only=features_only, out_indices=out_indices, **kwargs)
 
+
 def vit_b_32_img(features_only: bool = False, input_size: Optional[Union[int, Tuple[int, int]]] = None, **kwargs: Any) -> VisionTransformer:
     return _vit("vit_b_32", features_only=features_only, input_size=input_size, **kwargs)
+
 
 def vit_b_16_img(features_only: bool = False, input_size: Optional[Union[int, Tuple[int, int]]] = None, **kwargs: Any) -> VisionTransformer:
     return _vit("vit_b_16", features_only=features_only, input_size=input_size, **kwargs)
 
+
 def vit_l_14_img(features_only: bool = False, input_size: Optional[Union[int, Tuple[int, int]]] = None, **kwargs: Any) -> VisionTransformer:
     return _vit("vit_l_14", features_only=features_only, input_size=input_size, **kwargs)
+
 
 def vit_l_14_336px_img(features_only: bool = False, input_size: Optional[Union[int, Tuple[int, int]]] = None, **kwargs: Any) -> VisionTransformer:
     return _vit("vit_l_14_336px", features_only=features_only, input_size=input_size, **kwargs)
@@ -211,26 +224,34 @@ def vit_l_14_336px_img(features_only: bool = False, input_size: Optional[Union[i
 def resnet50_txt() -> CLIPTextEncoder:
     return _text_encoder("resnet50")
 
+
 def resnet101_txt() -> CLIPTextEncoder:
     return _text_encoder("resnet101")
+
 
 def resnet50x4_txt() -> CLIPTextEncoder:
     return _text_encoder("resnet50x4")
 
+
 def resnet50x16_txt() -> CLIPTextEncoder:
     return _text_encoder("resnet50x16")
+
 
 def resnet50x64_txt() -> CLIPTextEncoder:
     return _text_encoder("resnet50x64")
 
+
 def vit_b_32_txt() -> CLIPTextEncoder:
     return _text_encoder("vit_b_32")
+
 
 def vit_b_16_txt() -> CLIPTextEncoder:
     return _text_encoder("vit_b_16")
 
+
 def vit_l_14_txt() -> CLIPTextEncoder:
     return _text_encoder("vit_l_14")
+
 
 def vit_l_14_336px_txt() -> CLIPTextEncoder:
     return _text_encoder("vit_l_14_336px")

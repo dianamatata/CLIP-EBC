@@ -60,8 +60,8 @@ class MLPBlock(MLP):
             # Replacing legacy MLPBlock with MLP. See https://github.com/pytorch/vision/pull/6053
             for i in range(2):
                 for type in ["weight", "bias"]:
-                    old_key = f"{prefix}linear_{i+1}.{type}"
-                    new_key = f"{prefix}{3*i}.{type}"
+                    old_key = f"{prefix}linear_{i + 1}.{type}"
+                    new_key = f"{prefix}{3 * i}.{type}"
                     if old_key in state_dict:
                         state_dict[new_key] = state_dict.pop(old_key)
 
@@ -114,6 +114,7 @@ class EncoderBlock(nn.Module):
 
 class Encoder(nn.Module):
     """Transformer Model Encoder for sequence to sequence translation."""
+
     def __init__(
         self,
         num_h_patches: int,
@@ -213,14 +214,10 @@ class VisionTransformer(nn.Module):
                     ),
                 )
                 prev_channels = conv_stem_layer_config.out_channels
-            seq_proj.add_module(
-                "conv_last", nn.Conv2d(in_channels=prev_channels, out_channels=hidden_dim, kernel_size=1)
-            )
+            seq_proj.add_module("conv_last", nn.Conv2d(in_channels=prev_channels, out_channels=hidden_dim, kernel_size=1))
             self.conv_proj: nn.Module = seq_proj
         else:
-            self.conv_proj = nn.Conv2d(
-                in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size
-            )
+            self.conv_proj = nn.Conv2d(in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size)
 
         seq_length = (image_size // patch_size) ** 2
 
@@ -259,9 +256,7 @@ class VisionTransformer(nn.Module):
                 nn.init.zeros_(self.conv_proj.bias)
         elif self.conv_proj.conv_last is not None and isinstance(self.conv_proj.conv_last, nn.Conv2d):
             # Init the last 1x1 conv of the conv stem
-            nn.init.normal_(
-                self.conv_proj.conv_last.weight, mean=0.0, std=math.sqrt(2.0 / self.conv_proj.conv_last.out_channels)
-            )
+            nn.init.normal_(self.conv_proj.conv_last.weight, mean=0.0, std=math.sqrt(2.0 / self.conv_proj.conv_last.out_channels))
             if self.conv_proj.conv_last.bias is not None:
                 nn.init.zeros_(self.conv_proj.conv_last.bias)
 
@@ -388,7 +383,7 @@ def interpolate_embeddings(
         seq_length_1d = int(math.sqrt(seq_length))
         if seq_length_1d * seq_length_1d != seq_length:
             raise ValueError(
-                f"seq_length is not a perfect square! Instead got seq_length_1d * seq_length_1d = {seq_length_1d * seq_length_1d } and seq_length = {seq_length}"
+                f"seq_length is not a perfect square! Instead got seq_length_1d * seq_length_1d = {seq_length_1d * seq_length_1d} and seq_length = {seq_length}"
             )
 
         # (1, hidden_dim, seq_length) -> (1, hidden_dim, seq_l_1d, seq_l_1d)
@@ -523,4 +518,3 @@ def vit_h_14(
         new_pos_embedding = interpolate_embeddings(image_size, 14, vit.state_dict()["encoder.pos_embedding"], "bicubic")
         vit.encoder.pos_embedding = nn.Parameter(new_pos_embedding, requires_grad=True)
     return vit
-

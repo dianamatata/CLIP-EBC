@@ -49,7 +49,7 @@ def collate_fn(batch: List[Tensor]) -> Tuple[Tensor, List[Tensor], Tensor]:
         densities = torch.cat(batch[2], 0)
 
         return images, points, densities
-    
+
     elif len(batch) == 2:  # image, image_name. NWPU test dataset
         images = torch.cat(images, 0)
         image_names = batch[1]

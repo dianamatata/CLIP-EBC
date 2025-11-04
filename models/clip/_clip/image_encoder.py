@@ -14,6 +14,7 @@ class ModifiedResNet(nn.Module):
     - Performs anti-aliasing strided convolutions, where an avgpool is prepended to convolutions with stride > 1
     - The final pooling layer is a QKV attention instead of an average pool
     """
+
     def __init__(
         self,
         layers: Tuple[int, int, int, int],
@@ -133,14 +134,16 @@ class VisionTransformer(nn.Module):
         assert isinstance(input_resolution, tuple) and len(input_resolution) == 2, f"input_resolution should be a tuple of length 2, but got {input_resolution}"
         assert isinstance(patch_size, tuple) and len(patch_size) == 2, f"patch_size should be a tuple of length 2, but got {patch_size}"
         assert patch_size[0] == patch_size[1], f"ViT only supports square patches, patch_size={patch_size} is invalid."
-        assert input_resolution[0] % patch_size[0] == 0 and input_resolution[1] % patch_size[1] == 0, f"input_resolution {input_resolution} should be divisible by patch_size {patch_size}"
+        assert input_resolution[0] % patch_size[0] == 0 and input_resolution[1] % patch_size[1] == 0, (
+            f"input_resolution {input_resolution} should be divisible by patch_size {patch_size}"
+        )
         self.input_resolution = input_resolution
         self.patch_size = patch_size
         self.downsampling_rate = patch_size[0]
 
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
 
-        scale = width ** -0.5
+        scale = width**-0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
         self.num_patches_h = int(input_resolution[0] // patch_size[0])
         self.num_patches_w = int(input_resolution[1] // patch_size[1])
@@ -172,8 +175,14 @@ class VisionTransformer(nn.Module):
         if self.input_resolution[0] != h or self.input_resolution[1] != w:
             new_num_patches_h = int(h // self.patch_size[0])
             new_num_patches_w = int(w // self.patch_size[1])
-            positional_embedding = rearrange(self.positional_embedding[1:, :], "(h w) c -> c h w", h=self.num_patches_h, w=self.num_patches_w).unsqueeze(0)  # add batch dimension
-            positional_embedding = F.interpolate(positional_embedding, size=(new_num_patches_h, new_num_patches_w), mode="bicubic", ).squeeze(0)  # remove batch dimension
+            positional_embedding = rearrange(self.positional_embedding[1:, :], "(h w) c -> c h w", h=self.num_patches_h, w=self.num_patches_w).unsqueeze(
+                0
+            )  # add batch dimension
+            positional_embedding = F.interpolate(
+                positional_embedding,
+                size=(new_num_patches_h, new_num_patches_w),
+                mode="bicubic",
+            ).squeeze(0)  # remove batch dimension
             positional_embedding = rearrange(positional_embedding, "c h w -> (h w) c")
             self.positional_embedding = nn.Parameter(torch.cat([self.positional_embedding[:1, :], positional_embedding], dim=0))
             self.input_resolution = (h, w)
@@ -191,23 +200,22 @@ class VisionTransformer(nn.Module):
         if h == self.num_patches_h and w == self.num_patches_w:
             return self.positional_embedding
         else:
-            positional_embedding = rearrange(self.positional_embedding[1:, :], "(h w) c -> c h w", h=self.num_patches_h, w=self.num_patches_w).unsqueeze(0)  # add batch dimension
+            positional_embedding = rearrange(self.positional_embedding[1:, :], "(h w) c -> c h w", h=self.num_patches_h, w=self.num_patches_w).unsqueeze(
+                0
+            )  # add batch dimension
             positional_embedding = F.interpolate(positional_embedding, size=(h, w), mode="bicubic").squeeze(0)  # remove batch dimension
             positional_embedding = rearrange(positional_embedding, "c h w -> (h w) c")
             positional_embedding = torch.cat([self.positional_embedding[:1, :], positional_embedding], dim=0)
             return positional_embedding
 
     def forward(self, x: Tensor) -> Tensor:
-        x = self.conv1(x) # shape = [*, width, grid, grid]
+        x = self.conv1(x)  # shape = [*, width, grid, grid]
         num_patches_h, num_patches_w = x.shape[-2:]
 
         positional_embedding = self._interpolate_pos_embed(num_patches_h, num_patches_w).to(x.dtype)
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
-        x = torch.cat([
-                self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), 
-                x
-            ], dim=1)
+        x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)
         x = x + positional_embedding
         x = self.ln_pre(x)
 

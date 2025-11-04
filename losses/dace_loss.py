@@ -7,14 +7,7 @@ from .utils import _reshape_density
 
 
 class DACELoss(nn.Module):
-    def __init__(
-        self,
-        bins: List[Tuple[float, float]],
-        reduction: int,
-        weight_count_loss: float = 1.0,
-        count_loss: str = "mae",
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, bins: List[Tuple[float, float]], reduction: int, weight_count_loss: float = 1.0, count_loss: str = "mae", **kwargs: Any) -> None:
         super().__init__()
         assert len(bins) > 0, f"Expected at least one bin, got {bins}"
         assert all([len(b) == 2 for b in bins]), f"Expected all bins to be of length 2, got {bins}"
@@ -48,7 +41,9 @@ class DACELoss(nn.Module):
 
     def forward(self, pred_class: Tensor, pred_density: Tensor, target_density: Tensor, target_points: List[Tensor]) -> Tuple[Tensor, Dict[str, Tensor]]:
         target_density = _reshape_density(target_density, reduction=self.reduction) if target_density.shape[-2:] != pred_density.shape[-2:] else target_density
-        assert pred_density.shape == target_density.shape, f"Expected pred_density and target_density to have the same shape, got {pred_density.shape} and {target_density.shape}"
+        assert pred_density.shape == target_density.shape, (
+            f"Expected pred_density and target_density to have the same shape, got {pred_density.shape} and {target_density.shape}"
+        )
 
         target_class = self._bin_count(target_density)
 

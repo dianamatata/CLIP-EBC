@@ -92,17 +92,17 @@ def update_eval_result(
                 break
 
         # If the new score is better than the worst best score
-        if loc is not None: 
+        if loc is not None:
             # Update the best scores
-            best_scores[k] = best_scores[k][:len(best_scores[k]) - 1]
+            best_scores[k] = best_scores[k][: len(best_scores[k]) - 1]
 
             # Rename the best_{k}_{i}.pth to best_{k}_{i+1}.pth, best_{k}_{i+1}.pth to best_{k}_{i+2}.pth ...
             for i in range(len(best_scores[k]) - 1, loc, -1):
-                if os.path.exists(os.path.join(ckpt_dir, f"best_{k}_{i-1}.pth")):
-                    os.rename(os.path.join(ckpt_dir, f"best_{k}_{i-1}.pth"), os.path.join(ckpt_dir, f"best_{k}_{i}.pth"))
+                if os.path.exists(os.path.join(ckpt_dir, f"best_{k}_{i - 1}.pth")):
+                    os.rename(os.path.join(ckpt_dir, f"best_{k}_{i - 1}.pth"), os.path.join(ckpt_dir, f"best_{k}_{i}.pth"))
 
             # Save the best checkpoint
-            torch.save(state_dict, os.path.join(ckpt_dir, f"best_{k}_{loc}.pth"))    
+            torch.save(state_dict, os.path.join(ckpt_dir, f"best_{k}_{loc}.pth"))
 
     return hist_scores, best_scores
 
@@ -119,7 +119,7 @@ def update_loss_info(hist_scores: Union[Dict[str, List[float]], None], curr_scor
 
 def log(
     logger: logging.Logger,
-    epoch: int, 
+    epoch: int,
     total_epochs: int,
     loss_info: Optional[Dict[str, float]] = None,
     curr_scores: Optional[Dict[str, float]] = None,

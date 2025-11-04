@@ -24,11 +24,7 @@ class ResidualAttentionBlock(nn.Module):
         super().__init__()
         self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ln_1 = LayerNorm(d_model)
-        self.mlp = nn.Sequential(OrderedDict([
-            ("c_fc", nn.Linear(d_model, d_model * 4)),
-            ("gelu", QuickGELU()),
-            ("c_proj", nn.Linear(d_model * 4, d_model))
-        ]))
+        self.mlp = nn.Sequential(OrderedDict([("c_fc", nn.Linear(d_model, d_model * 4)), ("gelu", QuickGELU()), ("c_proj", nn.Linear(d_model * 4, d_model))]))
         self.ln_2 = LayerNorm(d_model)
         self.attn_mask = attn_mask
 
@@ -79,11 +75,15 @@ class Bottleneck(nn.Module):
 
         if stride > 1 or inplanes != planes * Bottleneck.expansion:
             # downsampling layer is prepended with an avgpool, and the subsequent convolution has stride 1
-            self.downsample = nn.Sequential(OrderedDict([
-                ("-1", nn.AvgPool2d(stride)),
-                ("0", nn.Conv2d(inplanes, planes * self.expansion, 1, stride=1, bias=False)),
-                ("1", nn.BatchNorm2d(planes * self.expansion))
-            ]))
+            self.downsample = nn.Sequential(
+                OrderedDict(
+                    [
+                        ("-1", nn.AvgPool2d(stride)),
+                        ("0", nn.Conv2d(inplanes, planes * self.expansion, 1, stride=1, bias=False)),
+                        ("1", nn.BatchNorm2d(planes * self.expansion)),
+                    ]
+                )
+            )
 
     def forward(self, x: Tensor):
         identity = x
@@ -104,7 +104,7 @@ class Bottleneck(nn.Module):
 class AttentionPool2d(nn.Module):
     def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None):
         super().__init__()
-        self.positional_embedding = nn.Parameter(torch.randn(spacial_dim + 1, embed_dim) / embed_dim ** 0.5)
+        self.positional_embedding = nn.Parameter(torch.randn(spacial_dim + 1, embed_dim) / embed_dim**0.5)
         self.k_proj = nn.Linear(embed_dim, embed_dim)
         self.q_proj = nn.Linear(embed_dim, embed_dim)
         self.v_proj = nn.Linear(embed_dim, embed_dim)
@@ -116,7 +116,9 @@ class AttentionPool2d(nn.Module):
         x = torch.cat([x.mean(dim=0, keepdim=True), x], dim=0)  # (HW+1)NC
         x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
         x, _ = F.multi_head_attention_forward(
-            query=x[:1], key=x, value=x,
+            query=x[:1],
+            key=x,
+            value=x,
             embed_dim_to_check=x.shape[-1],
             num_heads=self.num_heads,
             q_proj_weight=self.q_proj.weight,
@@ -132,6 +134,6 @@ class AttentionPool2d(nn.Module):
             out_proj_bias=self.c_proj.bias,
             use_separate_proj_weight=True,
             training=self.training,
-            need_weights=False
+            need_weights=False,
         )
         return x.squeeze(0)
