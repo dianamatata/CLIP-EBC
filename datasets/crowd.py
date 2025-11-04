@@ -14,6 +14,7 @@ curr_dir = os.path.dirname(os.path.abspath(__file__))
 
 available_datasets = [
     "shanghaitech_a", "sha",
+    "popcorn", "mussel",
     "shanghaitech_b", "shb",
     "ucf_qnrf", "qnrf", "ucf-qnrf",
     "nwpu", "nwpu_crowd", "nwpu-crowd",
@@ -31,6 +32,8 @@ def standardize_dataset_name(dataset: str) -> str:
         return "qnrf"
     elif dataset.lower() in ["nwpu", "nwpu_crowd", "nwpu-crowd"]:
         return "nwpu"
+    elif dataset.lower() in ["popcorn", "mussel"]:
+        return "popcorn"
     else:  # dataset.lower() in ["jhu", "jhu_crowd", "jhu_crowd_v2"]
         return "jhu"
 
@@ -69,17 +72,19 @@ class Crowd(Dataset):
         self.num_crops = num_crops
 
     def __find_root__(self) -> None:
-        # if self.dataset == "sha":
-        #     self.root = os.path.join(curr_dir, "..", "data", "ShanghaiTech_A")
+        if self.dataset == "sha":
+            self.root = os.path.join(curr_dir, "..", "data", "ShanghaiTech_A")
+        if self.dataset == "popcorn":
+            self.root = os.path.join(curr_dir, "..", "data", "train_popcorn_points")
         # elif self.dataset == "shb":
         #     self.root = os.path.join(curr_dir, "..", "data", "ShanghaiTech_B")
         # elif self.dataset == "qnrf":
         #     self.root = os.path.join(curr_dir, "..", "data", "QNRF")
         # elif self.dataset == "nwpu":
         #     self.root = os.path.join(curr_dir, "..", "data", "NWPU")
-        # else:  # self.dataset == "jhu"
-        #     self.root = os.path.join(curr_dir, "..", "data", "JHU")
-        self.root = os.path.join(curr_dir, "..", "data", self.dataset)
+        # else:
+        #     self.root = os.path.join(curr_dir, "..", "data", self.dataset)
+        print("Dataset: ", self.dataset)
 
     def __make_dataset__(self) -> None:
         image_npys = glob(os.path.join(self.root, self.split, "images", "*.npy"))
@@ -88,9 +93,11 @@ class Crowd(Dataset):
             image_names = image_npys
         else:
             self.image_type = "jpg"
-            image_names = glob(os.path.join(self.root, self.split, "images", "*.jpg"))
+            image_dir = os.path.normpath(os.path.join(self.root, self.split, "images"))
+            image_names = glob(os.path.join(image_dir, "*.jpg"))
 
-        label_names = glob(os.path.join(self.root, self.split, "labels", "*.npy"))
+        dir = os.path.normpath(os.path.join(self.root, self.split, "labels", "*.txt"))
+        label_names = glob(dir)
         image_names = [os.path.basename(image_name) for image_name in image_names]
         label_names = [os.path.basename(label_name) for label_name in label_names]
         image_names.sort(key=get_id)
@@ -107,6 +114,13 @@ class Crowd(Dataset):
                 assert len(self.image_names) == len(self.label_names) == 300, f"ShanghaiTech_A train split should have 300 images, but found {len(self.image_names)}."
             else:
                 assert len(self.image_names) == len(self.label_names) == 182, f"ShanghaiTech_A val split should have 182 images, but found {len(self.image_names)}."
+        if self.dataset == "popcorn":
+            if self.split == "train":
+                assert len(self.image_names) == len(self.label_names) == 3, f"popcorn train split should have 3 images, but found {len(self.image_names)}."
+            else:
+                print(len(self.image_names))
+                print(len(self.label_names))
+                assert len(self.image_names) == len(self.label_names) == 2, f"popcorn val split should have 2 images, but found {len(self.image_names)}."
         elif self.dataset == "shb":
             if self.split == "train":
                 assert len(self.image_names) == len(self.label_names) == 400, f"ShanghaiTech_B train split should have 400 images, but found {len(self.image_names)}."
